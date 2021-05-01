@@ -66,3 +66,6 @@ func (r *RedisClient) Get(key string) (string, error) {
 	}
 }
 
+func (r *RedisClient) PrintInfo() {
+	fmt.Println(r.Client.Do(r.Context, "info", "replication"))
+}
