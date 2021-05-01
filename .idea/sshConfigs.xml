@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SshConfigs">
+    <configs>
+      <sshConfig host="35.227.5.37" id="13c0d012-1532-4848-b55b-a60a280c8137" keyPath="$PROJECT_DIR$/deployment/install/id_ed25519" port="22" customName="redis-master-1" nameFormat="CUSTOM" username="root">
+        <option name="customName" value="redis-master-1" />
+      </sshConfig>
+    </configs>
+  </component>
+</project>

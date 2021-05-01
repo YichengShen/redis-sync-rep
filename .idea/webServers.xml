@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="bef122d3-4515-4be4-844e-ee9918332465" name="master">
+        <fileTransfer accessType="SFTP" host="35.227.5.37" port="22" sshConfigId="13c0d012-1532-4848-b55b-a60a280c8137" sshConfig="redis-master-1" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+    <groups>
+      <group>
+        <name>Redis</name>
+        <servers>
+          <name value="master" />
+        </servers>
+      </group>
+    </groups>
+  </component>
+</project>
