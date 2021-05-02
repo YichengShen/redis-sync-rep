@@ -45,7 +45,10 @@ func (r *RedisClient) Set(key, value string, expTime time.Duration, numReplicas 
 
 	// Use redis WAIT command to block until numReplicas replicas got the previous write
 	n, err := r.Client.Do(r.Context, "wait", numReplicas, 0).Result()
-	fmt.Println(n)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Replicated to", n, "replicas")
 
 	return nil
 }
@@ -75,10 +78,4 @@ func (r *RedisClient) ChangePersistence() {
 	fmt.Println(r.Client.Do(r.Context, "config", "get", "appendonly"))
 	r.Client.Do(r.Context, "config", "set", "save", "")
 	fmt.Println(r.Client.Do(r.Context, "config", "get", "save"))
-}
-
-func (r *RedisClient) SetAsReplica() {
-	// TODO: change hard coded ip
-	r.Client.Do(r.Context, "replicaof", "10.142.0.58 6379")
-	fmt.Println(r.Client.Do(r.Context, "config", "get", "replicaof"))
 }

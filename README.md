@@ -19,6 +19,12 @@ cd redis-testing
 ```
 
 3. Start Redis server
-```shell
-. ./deployment/run/run_redis_server.sh
-```
+    - run as master
+        ```shell
+        . ./deployment/run/run.sh
+        ```
+    - run as replica
+        ```shell
+        . ./deployment/run/run.sh replica
+        ```
+    
