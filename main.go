@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/redisTesting/client"
+	"github.com/redisTesting/db"
 )
 
 func main()  {
-	client, err := client.NewClient("10.142.0.58:6379")
+	client, err := db.NewClient("10.142.0.58:6379")
 	if err != nil {
 		panic("No connection")
 	}
