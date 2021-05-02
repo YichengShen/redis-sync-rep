@@ -69,3 +69,16 @@ func (r *RedisClient) Get(key string) (string, error) {
 func (r *RedisClient) PrintInfo() {
 	fmt.Println(r.Client.Do(r.Context, "info", "replication"))
 }
+
+func (r *RedisClient) ChangePersistence() {
+	r.Client.Do(r.Context, "config", "set", "appendonly", "no")
+	fmt.Println(r.Client.Do(r.Context, "config", "get", "appendonly"))
+	r.Client.Do(r.Context, "config", "set", "save", "")
+	fmt.Println(r.Client.Do(r.Context, "config", "get", "save"))
+}
+
+func (r *RedisClient) SetAsReplica() {
+	// TODO: change hard coded ip
+	r.Client.Do(r.Context, "replicaof", "10.142.0.58 6379")
+	fmt.Println(r.Client.Do(r.Context, "config", "get", "replicaof"))
+}

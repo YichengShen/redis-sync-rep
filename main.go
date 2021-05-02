@@ -17,4 +17,10 @@ func main()  {
 	}
 	fmt.Println(client.Get("key"))
 
+	client.ChangePersistence()
+
+	client.SetAsReplica()
+
+	//client.PrintInfo()
+
 }

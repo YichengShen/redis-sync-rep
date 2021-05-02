@@ -10,10 +10,11 @@ function install_key() {
     chmod 400 "${redis_folder}"/deployment/install/id_ed25519
 }
 
+# Install Redis
 function install_redis() {
-    sudo apt-add-repository ppa:chris-lea/redis-server
+    echo | sudo apt-add-repository ppa:chris-lea/redis-server
     sudo apt-get update
-    sudo apt-get install redis-server
+    sudo apt-get install --assume-yes redis-server
 }
 
 # Installs a version of Golang
