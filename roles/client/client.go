@@ -17,16 +17,26 @@ var ClientBatchSize = 1
 var KeyLen = 8
 var ValLen = 8
 
+// a request is one or more kv-store operating commands (i.e, read or write command), depends on ClientBatchSize
+type CommandLog struct {
+	StartTime   time.Time     	// the send time of this command
+	EndTime 	time.Time     	// the receive time of this command
+	Duration    time.Duration 	// the latency of this command
+}
+
 /*
 	A client
 */
 type Client struct {
-	ClientId uint32
-	MasterClient *db.RedisClient  // SET and GET command uses this
-	OperationDone chan int
+	ClientId 					uint32
 
-	Rand    *rand.Rand
-	startSending, endSending time.Time
+	MasterClient 				*db.RedisClient  // SET and GET command uses this
+	CommandDone 				chan int
+
+	Rand    					*rand.Rand
+	CommandLog 					[]CommandLog
+	SentSoFar 					int
+	startSending, endSending 	time.Time
 }
 
 /*
@@ -44,11 +54,13 @@ func ClientInit(clientId uint32) *Client {
 	c := &Client{
 		ClientId: clientId,
 		MasterClient: masterClient,
-		OperationDone: make(chan int),
+		CommandDone: make(chan int),
 		Rand: rand.New(rand.NewSource(time.Now().UnixNano() * int64(clientId))),
+
+		CommandLog: make([]CommandLog, NClientRequests/ClientBatchSize),
 	}
 	/*
-		SentSoFar, ReceivedSoFar are zeros are initialization
+		SentSoFar is zero at initialization
 		startSending, endSending retain their default values
 	*/
 	return c
@@ -65,10 +77,10 @@ func (c *Client) CloseLoopClient(wg *sync.WaitGroup, keyPool *[]string)  {
 	// TODO: ClientBatchSize not meaningful yet
 	for i := 0; i < NClientRequests/ClientBatchSize; i++ {
 
-		go c.processOneOperation(keyPool)
+		go c.processOneCommand(i, keyPool)
 
 		select {
-		case <-c.OperationDone:
+		case <-c.CommandDone:
 			continue
 		case <-ticker.C:
 			break MainLoop
@@ -79,15 +91,17 @@ func (c *Client) CloseLoopClient(wg *sync.WaitGroup, keyPool *[]string)  {
 	fmt.Println("Time:", c.endSending.Sub(c.startSending))
 }
 
-func (c *Client) processOneOperation(keyPool *[]string)  {
+func (c *Client) processOneCommand(i int, keyPool *[]string)  {
 	// Randomly get a key from keyPool
 	// The key is used for SET or GET
 	key := (*keyPool)[c.Rand.Intn(KeyPoolSize)]
 
 	// Random 0 or 1
-	operation := c.Rand.Intn(2)
+	command := c.Rand.Intn(2)
 
-	if operation == 0 {
+	// Run SET or GET and keep track of time
+	tic := time.Now()
+	if command == 0 {
 		// Set
 		value := rstring.RandString(c.Rand, ValLen)
 		err := c.MasterClient.Set(key, value, 0, 1)
@@ -101,7 +115,17 @@ func (c *Client) processOneOperation(keyPool *[]string)  {
 			panic(err)
 		}
 	}
-	c.OperationDone <- 1
+	toc := time.Now()
+
+	// Save time into CommandLog of client
+	c.CommandLog[i] = CommandLog{
+		StartTime: tic,
+		EndTime: toc,
+		Duration: toc.Sub(tic),
+	}
+
+	c.CommandDone <- 1
+	c.SentSoFar += ClientBatchSize
 }
 
 func StartNClients(n int)  {
