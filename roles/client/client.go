@@ -19,8 +19,8 @@ var ValLen = 8
 
 // a request is one or more kv-store operating commands (i.e, read or write command), depends on ClientBatchSize
 type CommandLog struct {
-	StartTime   time.Time     	// the send time of this command
-	EndTime 	time.Time     	// the receive time of this command
+	StartTime   time.Time     	// the start time of this command
+	EndTime 	time.Time     	// the finish time of this command
 	Duration    time.Duration 	// the latency of this command
 }
 
@@ -66,6 +66,8 @@ func ClientInit(clientId uint32) *Client {
 	return c
 }
 
+// CloseLoopClient starts running a client
+// It keeps issuing SET or GET commands
 func (c *Client) CloseLoopClient(wg *sync.WaitGroup, keyPool *[]string)  {
 	defer wg.Done()
 
@@ -91,6 +93,8 @@ func (c *Client) CloseLoopClient(wg *sync.WaitGroup, keyPool *[]string)  {
 	fmt.Println("Time:", c.endSending.Sub(c.startSending))
 }
 
+// processOneCommand randomly runs SET or GET
+// and keeps track of time
 func (c *Client) processOneCommand(i int, keyPool *[]string)  {
 	// Randomly get a key from keyPool
 	// The key is used for SET or GET
@@ -128,6 +132,8 @@ func (c *Client) processOneCommand(i int, keyPool *[]string)  {
 	c.SentSoFar += ClientBatchSize
 }
 
+// StartNClients performs some initializations
+// and then starts running n clients
 func StartNClients(n int)  {
 	var wg sync.WaitGroup
 
@@ -150,6 +156,7 @@ func StartNClients(n int)  {
 	wg.Wait()
 }
 
+// Initialize a key pool to pick from later
 func InitKeyPool(keyPoolSize int) *[]string {
 	// Temporary client to set some keys
 	tempClient, err := db.NewClient("10.142.0.58:6379")
