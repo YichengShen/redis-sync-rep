@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+var KeyPoolSize = 1000
+
 var ClientTimeout = 10 * time.Second
 var NClientRequests = 1000
 var ClientBatchSize = 1
@@ -21,10 +23,10 @@ var ValLen = 8
 type Client struct {
 	ClientId uint32
 	MasterClient *db.RedisClient  // SET and GET command uses this
-	RedisGetChan chan string
+	OperationDone chan int
 
 	Rand    *rand.Rand
-	startSending, endSending, endReceiving time.Time
+	startSending, endSending time.Time
 }
 
 /*
@@ -42,43 +44,31 @@ func ClientInit(clientId uint32) *Client {
 	c := &Client{
 		ClientId: clientId,
 		MasterClient: masterClient,
-		RedisGetChan: make(chan string),
+		OperationDone: make(chan int),
 		Rand: rand.New(rand.NewSource(time.Now().UnixNano() * int64(clientId))),
 	}
 	/*
 		SentSoFar, ReceivedSoFar are zeros are initialization
-		startSending, endSending, endReceiving retain their default values
+		startSending, endSending retain their default values
 	*/
 	return c
 }
 
-func (c *Client) CloseLoopClient(wg *sync.WaitGroup)  {
+func (c *Client) CloseLoopClient(wg *sync.WaitGroup, keyPool *[]string)  {
 	defer wg.Done()
 
 	c.startSending = time.Now()
 
 	ticker := time.NewTicker(ClientTimeout)
-MainLoop:
+
+	MainLoop:
 	// TODO: ClientBatchSize not meaningful yet
 	for i := 0; i < NClientRequests/ClientBatchSize; i++ {
 
-		key := rstring.RandString(c.Rand, KeyLen)
-		value := rstring.RandString(c.Rand, ValLen)
-
-		// Set
-		err := c.MasterClient.Set(key, value, 0, 1)
-		if err != nil {
-			panic(err)
-		}
-
-		// Get
-		go func() {
-			val, _ := c.MasterClient.Get(key)
-			c.RedisGetChan <- val
-		}()
+		go c.processOneOperation(keyPool)
 
 		select {
-		case <-c.RedisGetChan:
+		case <-c.OperationDone:
 			continue
 		case <-ticker.C:
 			break MainLoop
@@ -86,12 +76,39 @@ MainLoop:
 	}
 
 	c.endSending = time.Now()
-	c.endReceiving = time.Now()
 	fmt.Println("Time:", c.endSending.Sub(c.startSending))
+}
+
+func (c *Client) processOneOperation(keyPool *[]string)  {
+	// Randomly get a key from keyPool
+	// The key is used for SET or GET
+	key := (*keyPool)[c.Rand.Intn(KeyPoolSize)]
+
+	// Random 0 or 1
+	operation := c.Rand.Intn(2)
+
+	if operation == 0 {
+		// Set
+		value := rstring.RandString(c.Rand, ValLen)
+		err := c.MasterClient.Set(key, value, 0, 1)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		// Get
+		_, err := c.MasterClient.Get(key)
+		if err != nil {
+			panic(err)
+		}
+	}
+	c.OperationDone <- 1
 }
 
 func StartNClients(n int)  {
 	var wg sync.WaitGroup
+
+	// Initialize a pool of keys
+	keyPool := InitKeyPool(KeyPoolSize)
 
 	// Initialize n clients
 	var allClients []*Client
@@ -103,8 +120,31 @@ func StartNClients(n int)  {
 	// Start all the clients
 	for _, cli := range allClients {
 		wg.Add(1)
-		go cli.CloseLoopClient(&wg)
+		go cli.CloseLoopClient(&wg, keyPool)
 	}
 
 	wg.Wait()
+}
+
+func InitKeyPool(keyPoolSize int) *[]string {
+	// Temporary client to set some keys
+	tempClient, err := db.NewClient("10.142.0.58:6379")
+	if err != nil {
+		panic("No connection")
+	}
+	tempClient.ChangePersistence()
+
+	// Generate many keys and set random values
+	// Then append keys to keyPool
+	var keyPool []string
+	for i := 0; i < keyPoolSize; i ++ {
+		key := rstring.RandString(rand.New(rand.NewSource(time.Now().UnixNano())), KeyLen)
+		value := rstring.RandString(rand.New(rand.NewSource(time.Now().UnixNano())), ValLen)
+		err := tempClient.Set(key, value, 0, 1)
+		if err != nil {
+			panic(err)
+		}
+		keyPool = append(keyPool, key)
+	}
+	return &keyPool
 }
