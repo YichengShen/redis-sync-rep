@@ -20,8 +20,7 @@ var ValLen = 8
 */
 type Client struct {
 	ClientId uint32
-	MasterClient *db.RedisClient  // SET command uses this
-	ReplicaClient *db.RedisClient // GET command uses this
+	MasterClient *db.RedisClient  // SET and GET command uses this
 	RedisGetChan chan string
 
 	Rand    *rand.Rand
@@ -39,17 +38,10 @@ func ClientInit(clientId uint32) *Client {
 		panic("No connection")
 	}
 	masterClient.ChangePersistence()
-	// Connect to replica
-	replicaClient, err := db.NewClient("localhost:6379")
-	if err != nil {
-		panic("No connection")
-	}
-	replicaClient.ChangePersistence()
 
 	c := &Client{
 		ClientId: clientId,
 		MasterClient: masterClient,
-		ReplicaClient: replicaClient,
 		RedisGetChan: make(chan string),
 		Rand: rand.New(rand.NewSource(time.Now().UnixNano() * int64(clientId))),
 	}
@@ -81,7 +73,7 @@ MainLoop:
 
 		// Get
 		go func() {
-			val, _ := c.ReplicaClient.Get(key)
+			val, _ := c.MasterClient.Get(key)
 			c.RedisGetChan <- val
 		}()
 

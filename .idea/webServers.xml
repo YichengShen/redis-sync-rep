@@ -3,14 +3,14 @@
   <component name="WebServers">
     <option name="servers">
       <webServer id="bef122d3-4515-4be4-844e-ee9918332465" name="master">
-        <fileTransfer accessType="SFTP" host="35.231.88.89" port="22" sshConfigId="13c0d012-1532-4848-b55b-a60a280c8137" sshConfig="redis-master-1" keyPair="true">
+        <fileTransfer accessType="SFTP" host="35.237.98.73" port="22" sshConfigId="13c0d012-1532-4848-b55b-a60a280c8137" sshConfig="redis-master-1" keyPair="true">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
           </advancedOptions>
         </fileTransfer>
       </webServer>
       <webServer id="8e22e53e-14e8-445d-ae81-df18b9919036" name="replica-1">
-        <fileTransfer accessType="SFTP" host="35.185.35.131" port="22" sshConfigId="a3e4ad69-ea43-40b4-8c83-04b4c4d0d470" sshConfig="redis-replica-1" keyPair="true">
+        <fileTransfer accessType="SFTP" host="34.73.203.209" port="22" sshConfigId="a3e4ad69-ea43-40b4-8c83-04b4c4d0d470" sshConfig="redis-replica-1" keyPair="true">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
           </advancedOptions>
