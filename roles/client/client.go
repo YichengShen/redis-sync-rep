@@ -49,7 +49,6 @@ func ClientInit(clientId uint32) *Client {
 	if err != nil {
 		panic("No connection")
 	}
-	masterClient.ChangePersistence()
 
 	c := &Client{
 		ClientId: clientId,
@@ -137,6 +136,9 @@ func (c *Client) processOneCommand(i int, keyPool *[]string)  {
 func StartNClients(n int)  {
 	var wg sync.WaitGroup
 
+	// Initialize settings for Redis master and replicas
+	db.SpecialDbInit()
+
 	// Initialize a pool of keys
 	keyPool := InitKeyPool(KeyPoolSize)
 
@@ -159,11 +161,11 @@ func StartNClients(n int)  {
 // Initialize a key pool to pick from later
 func InitKeyPool(keyPoolSize int) *[]string {
 	// Temporary client to set some keys
+	// TODO: ip is hard coded
 	tempClient, err := db.NewClient("10.142.0.58:6379")
 	if err != nil {
 		panic("No connection")
 	}
-	tempClient.ChangePersistence()
 
 	// Generate many keys and set random values
 	// Then append keys to keyPool

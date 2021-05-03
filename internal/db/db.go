@@ -73,9 +73,27 @@ func (r *RedisClient) PrintInfo() {
 	fmt.Println(r.Client.Do(r.Context, "info", "replication"))
 }
 
-func (r *RedisClient) ChangePersistence() {
+func SpecialDbInit() {
+	// TODO: ip is hard coded
+	// New temporary master
+	tempMaster, err := NewClient("10.142.0.58:6379")
+	if err != nil {
+		panic("No connection")
+	}
+	tempMaster.DisablePersistence()
+
+	// New temporary replica
+	tempReplica, err := NewClient("localhost:6379")
+	if err != nil {
+		panic("No connection")
+	}
+	tempReplica.DisablePersistence()
+}
+
+func (r *RedisClient) DisablePersistence() {
+	fmt.Println("Disable Persistence")
 	r.Client.Do(r.Context, "config", "set", "appendonly", "no")
-	//fmt.Println(r.Client.Do(r.Context, "config", "get", "appendonly"))
+	fmt.Println(r.Client.Do(r.Context, "config", "get", "appendonly"))
 	r.Client.Do(r.Context, "config", "set", "save", "")
-	//fmt.Println(r.Client.Do(r.Context, "config", "get", "save"))
+	fmt.Println(r.Client.Do(r.Context, "config", "get", "save"))
 }
