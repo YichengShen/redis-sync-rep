@@ -1,10 +1,22 @@
 package main
 
 import (
+	"github.com/redisTesting/deployment/analysis"
 	"github.com/redisTesting/roles/client"
+	"os"
 )
 
 func main()  {
-	client.StartNClients(100)
+	// Remove logs
+	err := os.RemoveAll("logs")
+	if err != nil {
+		panic(err)
+	}
+
+	// Run n clients
+	client.StartNClients(500)
+
+	// Analysis
+	analysis.RunAnalysis("logs")
 }
 

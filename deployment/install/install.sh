@@ -31,6 +31,7 @@ function install_go() {
 # Installs Golang packages
 function install_go_deps() {
     go get github.com/go-redis/redis/v8   # go-redis
+    go get -u github.com/rs/zerolog/log
 }
 
 install_key

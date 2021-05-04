@@ -4,15 +4,18 @@ import (
 	"fmt"
 	"github.com/redisTesting/internal/db"
 	"github.com/redisTesting/internal/rstring"
+	"github.com/rs/zerolog"
 	"math/rand"
+	"os"
+	"sort"
 	"sync"
 	"time"
 )
 
 var KeyPoolSize = 1000
 
-var ClientTimeout = 10 * time.Second
-var NClientRequests = 1000
+var ClientTimeout = 100000 * time.Second
+var NClientRequests = 10000
 var ClientBatchSize = 1
 var KeyLen = 8
 var ValLen = 8
@@ -89,7 +92,8 @@ func (c *Client) CloseLoopClient(wg *sync.WaitGroup, keyPool *[]string)  {
 	}
 
 	c.endSending = time.Now()
-	fmt.Println("Time:", c.endSending.Sub(c.startSending))
+	//fmt.Println("Time:", c.endSending.Sub(c.startSending))
+	c.writeToLog()
 }
 
 // processOneCommand randomly runs SET or GET
@@ -129,6 +133,100 @@ func (c *Client) processOneCommand(i int, keyPool *[]string)  {
 
 	c.CommandDone <- 1
 	c.SentSoFar += ClientBatchSize
+}
+
+// Write log to file
+func (c *Client) writeToLog() {
+	RepliedLength := len(c.CommandLog) // assume all replied
+	for i := 0; i < len(c.CommandLog); i++ {
+		if c.CommandLog[i].Duration == time.Duration(0) {
+			//c.Logger.Warn("", Int("not replied", i))
+			RepliedLength = i // update RepliedLength if necessary
+			break
+		}
+	}
+	//fmt.Println("RepliedLength =", RepliedLength)
+
+	// cmdLogs -- exclude head and tails statistics in BatchedCmdLog:
+	cmdLogs := make([]CommandLog, int(float64(RepliedLength)*0.8))
+	j := 0
+	for i := 0; i < len(c.CommandLog); i++ {
+		if i < int(float64(RepliedLength)*0.1) ||
+			i >= int(float64(RepliedLength)*0.9) {
+			continue
+		}
+		if j < len(cmdLogs) {
+			cmdLogs[j] = c.CommandLog[i]
+			j++
+		} else {
+			break
+		}
+	}
+	//fmt.Println("RepliedLength =", RepliedLength,
+	//	"len of cmdLogs = ", len(cmdLogs), ",", j, "items filled")
+
+	maxLatVal := time.Duration(0)
+	maxLatIdx := 0
+	for i, cmd := range cmdLogs {
+		if cmd.Duration > maxLatVal {
+			maxLatVal = cmd.Duration
+			maxLatIdx = i + int(float64(RepliedLength)*0.1)
+		}
+	}
+	mid80Start := cmdLogs[0].StartTime
+	mid80End := cmdLogs[len(cmdLogs)-1].EndTime
+	mid80Dur := mid80End.Sub(mid80Start).Seconds()
+
+	mid80FirstRecvTime := cmdLogs[0].EndTime
+	mid80RecvTimeDur := mid80End.Sub(mid80FirstRecvTime).Seconds()
+
+	sort.Slice(cmdLogs, func(i, j int) bool {
+		return cmdLogs[i].Duration < cmdLogs[j].Duration
+	})
+	minLat := cmdLogs[0].Duration
+	maxLat := cmdLogs[len(cmdLogs)-1].Duration
+	p50Lat := cmdLogs[int(float64(len(cmdLogs))*0.5)].Duration
+	p95Lat := cmdLogs[int(float64(len(cmdLogs))*0.9)].Duration
+	p99Lat := cmdLogs[int(float64(len(cmdLogs))*0.99)].Duration
+	var durSum int64
+	for _, v := range cmdLogs {
+		durSum += v.Duration.Microseconds()
+	}
+	durAvg := durSum / int64(len(cmdLogs))
+
+	// Make a log folder if necessary
+	// TODO: hard coded path
+	if err := os.MkdirAll("logs", os.ModePerm); err != nil {
+		panic(err)
+	}
+	// Create a file
+	file, err := os.Create(fmt.Sprintf("logs/client%d.json", c.ClientId))
+	if err != nil {
+		panic(err)
+	}
+
+	logger := zerolog.New(zerolog.MultiLevelWriter(file))
+
+	logger.Warn().
+		Uint32("ClientId", c.ClientId).
+		Int("TotalSent", c.SentSoFar).
+		Int64("minLat", minLat.Microseconds()).
+		Int64("maxLat", maxLat.Microseconds()).
+		Int("maxLatIdx", maxLatIdx).
+		Int64("avgLat", durAvg).
+		Int64("p50Lat", p50Lat.Microseconds()).
+		Int64("p95Lat", p95Lat.Microseconds()).
+		Int64("p99Lat", p99Lat.Microseconds()).
+		Int64("sendStart", c.startSending.UnixNano()).
+		Int64("sendEnd", c.endSending.UnixNano()).
+		Int64("mid80Start", mid80Start.UnixNano()).
+		Int64("mid80End", mid80End.UnixNano()).
+		Float64("mid80Dur", mid80Dur).
+		Float64("mid80RecvTimeDur", mid80RecvTimeDur).
+		Int("mid80Requests", len(cmdLogs)).
+		Float64("mid80Throughput (cmd/sec)", float64(len(cmdLogs))/mid80Dur).
+		Float64("mid80Throughput2 (cmd/sec)", float64(len(cmdLogs))/mid80RecvTimeDur).Msg("")
+
 }
 
 // StartNClients performs some initializations
