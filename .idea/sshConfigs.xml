@@ -8,6 +8,9 @@
       <sshConfig host="34.73.173.83" id="a3e4ad69-ea43-40b4-8c83-04b4c4d0d470" keyPath="$PROJECT_DIR$/deployment/install/id_ed25519" port="22" customName="redis-replica-1" nameFormat="CUSTOM" username="root">
         <option name="customName" value="redis-replica-1" />
       </sshConfig>
+      <sshConfig host="35.231.19.246" id="272627a2-a65c-4dca-80c0-00fb632de4f3" keyPath="$PROJECT_DIR$/deployment/install/id_ed25519" port="22" customName="redis-replica-2" nameFormat="CUSTOM" username="root">
+        <option name="customName" value="redis-replica-2" />
+      </sshConfig>
     </configs>
   </component>
 </project>

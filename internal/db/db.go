@@ -39,14 +39,14 @@ func NewClient(addr string) (*RedisClient, error) {
 }
 
 // Set calls the redis set command
-func (r *RedisClient) Set(key, value string, expTime time.Duration, numReplicas int) error {
+func (r *RedisClient) Set(key, value string, expTime time.Duration) error {
 	err := r.Client.Set(r.Context, key, value, expTime).Err()
 	if err != nil {
 		return err
 	}
 
 	// Use redis WAIT command to block until numReplicas replicas got the previous write
-	_, err = r.Client.Do(r.Context, "wait", numReplicas, 0).Result()
+	_, err = r.Client.Do(r.Context, "wait", cfg.Conf.NReplicas, 0).Result()
 	if err != nil {
 		return err
 	}
@@ -72,14 +72,14 @@ func (r *RedisClient) Get(key string) (string, error) {
 }
 
 // Mset calls the redis mset command
-func (r *RedisClient) Mset(keyValues []string, numReplicas int) error {
+func (r *RedisClient) Mset(keyValues []string) error {
 	err := r.Client.MSet(r.Context, keyValues).Err()
 	if err != nil {
 		panic(err)
 	}
 
 	// Use redis WAIT command to block until numReplicas replicas got the previous write
-	_, err = r.Client.Do(r.Context, "wait", numReplicas, 0).Result()
+	_, err = r.Client.Do(r.Context, "wait", cfg.Conf.NReplicas, 0).Result()
 	if err != nil {
 		return err
 	}

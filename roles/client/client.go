@@ -110,7 +110,7 @@ func (c *Client) processOneCommand(i int, keyPool *[]string)  {
 	if command == 0 {
 		// Set
 		value := rstring.RandString(c.Rand, cfg.Conf.ValLen)
-		err := c.MasterClient.Set(key, value, 0, 1)
+		err := c.MasterClient.Set(key, value, 0)
 		if err != nil {
 			panic(err)
 		}
@@ -163,7 +163,7 @@ func (c *Client) processBatchCommands(idx int, keyPool *[]string) {
 	// Run MGET and MSET and track time
 	tic := time.Now()
 	if setCount > 1 {
-		c.MasterClient.Mset(setCmds[:setCount], 1)
+		c.MasterClient.Mset(setCmds[:setCount])
 	}
 	if getCount > 1 {
 		c.MasterClient.Mget(getCmds[:getCount])
@@ -317,7 +317,7 @@ func InitKeyPool(keyPoolSize int) *[]string {
 	for i := 0; i < keyPoolSize; i ++ {
 		key := rstring.RandString(rand.New(rand.NewSource(time.Now().UnixNano())), cfg.Conf.KeyLen)
 		value := rstring.RandString(rand.New(rand.NewSource(time.Now().UnixNano())), cfg.Conf.ValLen)
-		err := tempClient.Set(key, value, 0, 1)
+		err := tempClient.Set(key, value, 0)
 		if err != nil {
 			panic(err)
 		}

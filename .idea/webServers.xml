@@ -16,6 +16,13 @@
           </advancedOptions>
         </fileTransfer>
       </webServer>
+      <webServer id="60c78b88-5fc2-4d89-88fa-16e21e4469dc" name="replica-2">
+        <fileTransfer accessType="SFTP" host="35.231.19.246" port="22" sshConfigId="272627a2-a65c-4dca-80c0-00fb632de4f3" sshConfig="redis-replica-2" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
     </option>
     <groups>
       <group>
@@ -23,6 +30,7 @@
         <servers>
           <name value="master" />
           <name value="replica-1" />
+          <name value="replica-2" />
         </servers>
       </group>
     </groups>
