@@ -2,23 +2,19 @@ package client
 
 import (
 	"fmt"
+	cfg "github.com/redisTesting/internal/config"
 	"github.com/redisTesting/internal/db"
 	"github.com/redisTesting/internal/rstring"
 	"github.com/rs/zerolog"
 	"math/rand"
+	"net"
 	"os"
 	"sort"
 	"sync"
 	"time"
 )
 
-var KeyPoolSize = 1000
-
-var ClientTimeout = 100000 * time.Second
-var NClientRequests = 10000
-var ClientBatchSize = 10
-var KeyLen = 8
-var ValLen = 8
+var KeyPoolSize = 1000 // number of keys generated for selection later
 
 // a request is one or more kv-store operating commands (i.e, read or write command), depends on ClientBatchSize
 type CommandLog struct {
@@ -46,9 +42,9 @@ type Client struct {
 	Initialize a client
 */
 func ClientInit(clientId uint32) *Client {
-	// TODO: ip is hard coded
 	// Connect to master
-	masterClient, err := db.NewClient("10.142.0.58:6379")
+	addr := net.JoinHostPort(cfg.Conf.MasterIp, cfg.Conf.MasterPort)
+	masterClient, err := db.NewClient(addr)
 	if err != nil {
 		panic("No connection")
 	}
@@ -59,7 +55,7 @@ func ClientInit(clientId uint32) *Client {
 		CommandDone: make(chan int),
 		Rand: rand.New(rand.NewSource(time.Now().UnixNano() * int64(clientId))),
 
-		CommandLog: make([]CommandLog, NClientRequests/ClientBatchSize),
+		CommandLog: make([]CommandLog, cfg.Conf.NClientRequests/cfg.Conf.ClientBatchSize),
 	}
 	/*
 		SentSoFar is zero at initialization
@@ -75,13 +71,13 @@ func (c *Client) CloseLoopClient(wg *sync.WaitGroup, keyPool *[]string)  {
 
 	c.startSending = time.Now()
 
+	ClientTimeout := time.Duration(cfg.Conf.ClientTimeout) * time.Second
 	ticker := time.NewTicker(ClientTimeout)
 
 	MainLoop:
-	// TODO: ClientBatchSize not meaningful yet
-	for i := 0; i < NClientRequests/ClientBatchSize; i++ {
+	for i := 0; i < cfg.Conf.NClientRequests/cfg.Conf.ClientBatchSize; i++ {
 
-		if ClientBatchSize > 1 {
+		if cfg.Conf.ClientBatchSize > 1 {
 			go c.processBatchCommands(i, keyPool)
 		} else {
 			go c.processOneCommand(i, keyPool)
@@ -96,7 +92,6 @@ func (c *Client) CloseLoopClient(wg *sync.WaitGroup, keyPool *[]string)  {
 	}
 
 	c.endSending = time.Now()
-	//fmt.Println("Time:", c.endSending.Sub(c.startSending))
 	c.writeToLog()
 }
 
@@ -114,7 +109,7 @@ func (c *Client) processOneCommand(i int, keyPool *[]string)  {
 	tic := time.Now()
 	if command == 0 {
 		// Set
-		value := rstring.RandString(c.Rand, ValLen)
+		value := rstring.RandString(c.Rand, cfg.Conf.ValLen)
 		err := c.MasterClient.Set(key, value, 0, 1)
 		if err != nil {
 			panic(err)
@@ -136,16 +131,16 @@ func (c *Client) processOneCommand(i int, keyPool *[]string)  {
 	}
 
 	c.CommandDone <- 1
-	c.SentSoFar += ClientBatchSize
+	c.SentSoFar += cfg.Conf.ClientBatchSize
 }
 
 // processBatchCommands runs MGET or MSET
 func (c *Client) processBatchCommands(idx int, keyPool *[]string) {
-	setCmds := make([]string, ClientBatchSize*2) // pending MSET requests
-	getCmds := make([]string, ClientBatchSize)   // pending MGET requests
+	setCmds := make([]string, cfg.Conf.ClientBatchSize*2) // pending MSET requests
+	getCmds := make([]string, cfg.Conf.ClientBatchSize)   // pending MGET requests
 	setCount, getCount := 0, 0                   // elements counter
 
-	for i := 0; i < ClientBatchSize; i ++ {
+	for i := 0; i < cfg.Conf.ClientBatchSize; i ++ {
 		// Random 0 or 1
 		command := c.Rand.Intn(2)
 
@@ -153,7 +148,7 @@ func (c *Client) processBatchCommands(idx int, keyPool *[]string) {
 
 		if command == 0 {
 			// Append set command
-			value := rstring.RandString(c.Rand, ValLen)
+			value := rstring.RandString(c.Rand, cfg.Conf.ValLen)
 			setCmds[setCount] = key
 			setCount += 1
 			setCmds[setCount] = value
@@ -183,7 +178,7 @@ func (c *Client) processBatchCommands(idx int, keyPool *[]string) {
 	}
 
 	c.CommandDone <- 1
-	c.SentSoFar += ClientBatchSize
+	c.SentSoFar += cfg.Conf.ClientBatchSize
 }
 
 // Write log to file
@@ -247,8 +242,7 @@ func (c *Client) writeToLog() {
 	durAvg := durSum / int64(len(cmdLogs))
 
 	// Make a log folder if necessary
-	// TODO: hard coded path
-	if err := os.MkdirAll("logs", os.ModePerm); err != nil {
+	if err := os.MkdirAll(cfg.Conf.LogDir, os.ModePerm); err != nil {
 		panic(err)
 	}
 	// Create a file
@@ -261,7 +255,6 @@ func (c *Client) writeToLog() {
 
 	logger.Warn().
 		Uint32("ClientId", c.ClientId).
-		Int("ClientBatchSize", ClientBatchSize).
 		Int("TotalSent", c.SentSoFar).
 		Int64("minLat", minLat.Microseconds()).
 		Int64("maxLat", maxLat.Microseconds()).
@@ -312,8 +305,8 @@ func StartNClients(n int)  {
 // Initialize a key pool to pick from later
 func InitKeyPool(keyPoolSize int) *[]string {
 	// Temporary client to set some keys
-	// TODO: ip is hard coded
-	tempClient, err := db.NewClient("10.142.0.58:6379")
+	addr := net.JoinHostPort(cfg.Conf.MasterIp, cfg.Conf.MasterPort)
+	tempClient, err := db.NewClient(addr)
 	if err != nil {
 		panic("No connection")
 	}
@@ -322,8 +315,8 @@ func InitKeyPool(keyPoolSize int) *[]string {
 	// Then append keys to keyPool
 	var keyPool []string
 	for i := 0; i < keyPoolSize; i ++ {
-		key := rstring.RandString(rand.New(rand.NewSource(time.Now().UnixNano())), KeyLen)
-		value := rstring.RandString(rand.New(rand.NewSource(time.Now().UnixNano())), ValLen)
+		key := rstring.RandString(rand.New(rand.NewSource(time.Now().UnixNano())), cfg.Conf.KeyLen)
+		value := rstring.RandString(rand.New(rand.NewSource(time.Now().UnixNano())), cfg.Conf.ValLen)
 		err := tempClient.Set(key, value, 0, 1)
 		if err != nil {
 			panic(err)

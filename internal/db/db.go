@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-redis/redis/v8"
+	cfg "github.com/redisTesting/internal/config"
+	"net"
 	"time"
 )
 
@@ -100,16 +102,17 @@ func (r *RedisClient) PrintInfo() {
 }
 
 func SpecialDbInit() {
-	// TODO: ip is hard coded
 	// New temporary master
-	tempMaster, err := NewClient("10.142.0.58:6379")
+	addr := net.JoinHostPort(cfg.Conf.MasterIp, cfg.Conf.MasterPort)
+	tempMaster, err := NewClient(addr)
 	if err != nil {
 		panic("No connection")
 	}
 	tempMaster.DisablePersistence()
 
 	// New temporary replica
-	tempReplica, err := NewClient("localhost:6379")
+	addrReplica := net.JoinHostPort(cfg.Conf.ReplicaIp, cfg.Conf.ReplicaPort)
+	tempReplica, err := NewClient(addrReplica)
 	if err != nil {
 		panic("No connection")
 	}
@@ -117,9 +120,9 @@ func SpecialDbInit() {
 }
 
 func (r *RedisClient) DisablePersistence() {
-	fmt.Println("Disable Persistence")
+	//fmt.Println("Disable Persistence")
 	r.Client.Do(r.Context, "config", "set", "appendonly", "no")
-	fmt.Println(r.Client.Do(r.Context, "config", "get", "appendonly"))
+	//fmt.Println(r.Client.Do(r.Context, "config", "get", "appendonly"))
 	r.Client.Do(r.Context, "config", "set", "save", "")
-	fmt.Println(r.Client.Do(r.Context, "config", "get", "save"))
+	//fmt.Println(r.Client.Do(r.Context, "config", "get", "save"))
 }

@@ -1,0 +1,14 @@
+MasterIp: 10.142.0.58
+MasterPort: 6379
+ReplicaIp: localhost
+ReplicaPort: 6379
+
+LogDir: "./logs"
+
+NClients: 100
+ClientTimeout: 100000
+NClientRequests: 10000
+ClientBatchSize: 10
+
+KeyLen: 10
+ValLen: 10

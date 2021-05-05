@@ -3,6 +3,7 @@ package analysis
 import (
 	"encoding/json"
 	"fmt"
+	cfg "github.com/redisTesting/internal/config"
 	"io/ioutil"
 	"math"
 	"os"
@@ -12,7 +13,6 @@ import (
 type ClientData struct {
 	Level string
 	ClientId int
-	ClientBatchSize int
 	TotalSent int
 	MinLat int
 	MaxLat int
@@ -103,7 +103,7 @@ func RunAnalysis(logDirPath string)  {
 	outputP99Lat := round(float64(sumP99Lat) / float64(numData) / math.Pow10(3))
 	//avgMid80RecvTime := round(float64(sumMid80RecvTime) / float64(numData) / math.Pow10(9))
 	outputMax80RecvTime := round(float64(maxMid80RecvTime) / math.Pow10(9))
-	outputSumMid80Requests := sumMid80Requests * (*allData)[0].ClientBatchSize
+	outputSumMid80Requests := sumMid80Requests * cfg.Conf.ClientBatchSize
 	outputMid80Throughput := round(float64(outputSumMid80Requests) / outputMax80RecvTime)
 	output := Output{
 		AvgDur: outputAvgDur,
