@@ -14,7 +14,7 @@ func main()  {
 	}
 
 	// Run n clients
-	client.StartNClients(100)
+	client.StartNClients(20)
 
 	// Analysis
 	analysis.RunAnalysis("logs")

@@ -189,13 +189,13 @@ func (c *Client) processBatchCommands(idx int, keyPool *[]string) {
 // Write log to file
 func (c *Client) writeToLog() {
 	RepliedLength := len(c.CommandLog) // assume all replied
-	for i := 0; i < len(c.CommandLog); i++ {
-		if c.CommandLog[i].Duration == time.Duration(0) {
-			//c.Logger.Warn("", Int("not replied", i))
-			RepliedLength = i // update RepliedLength if necessary
-			break
-		}
-	}
+	//for i := 0; i < len(c.CommandLog); i++ {
+	//	if c.CommandLog[i].Duration == time.Duration(0) {
+	//		//c.Logger.Warn("", Int("not replied", i))
+	//		RepliedLength = i // update RepliedLength if necessary
+	//		break
+	//	}
+	//}
 	//fmt.Println("RepliedLength =", RepliedLength)
 
 	// cmdLogs -- exclude head and tails statistics in BatchedCmdLog:
@@ -224,6 +224,7 @@ func (c *Client) writeToLog() {
 			maxLatIdx = i + int(float64(RepliedLength)*0.1)
 		}
 	}
+
 	mid80Start := cmdLogs[0].StartTime
 	mid80End := cmdLogs[len(cmdLogs)-1].EndTime
 	mid80Dur := mid80End.Sub(mid80Start).Seconds()
@@ -260,6 +261,7 @@ func (c *Client) writeToLog() {
 
 	logger.Warn().
 		Uint32("ClientId", c.ClientId).
+		Int("ClientBatchSize", ClientBatchSize).
 		Int("TotalSent", c.SentSoFar).
 		Int64("minLat", minLat.Microseconds()).
 		Int64("maxLat", maxLat.Microseconds()).
