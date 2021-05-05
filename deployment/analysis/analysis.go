@@ -33,8 +33,12 @@ type ClientData struct {
 }
 
 type Output struct {
+	AvgDur float64
 	AvgLat float64
+	P50Lat float64
+	P95LAT float64
 	P99Lat float64
+	MaxDur float64
 	Mid80Throughput float64
 }
 
@@ -69,10 +73,18 @@ func RunAnalysis(logDirPath string)  {
 	allData := LoadClientLogs(logDirPath)
 	numData := len(*allData)
 
-	var sumAvgLat, sumP99Lat, maxMid80RecvTime, sumMid80Requests int
+	var sumDur, maxDur float64
+	var sumAvgLat, sumP50Lat, sumP95Lat, sumP99Lat, maxMid80RecvTime, sumMid80Requests int
 	//var sumMid80RecvTime int
 	for _, data := range *allData {
+		sumDur += data.Mid80Dur
+		if data.Mid80Dur > maxDur {
+			maxDur = data.Mid80Dur
+		}
+
 		sumAvgLat += data.AvgLat
+		sumP50Lat += data.P50Lat
+		sumP95Lat += data.P95Lat
 		sumP99Lat += data.P99Lat
 
 		mid80RecvTime := data.Mid80End - data.Mid80Start
@@ -84,15 +96,22 @@ func RunAnalysis(logDirPath string)  {
 		sumMid80Requests += data.Mid80Requests
 	}
 
+	outputAvgDur := round(sumDur / float64(numData)) // TODO: check unit
 	outputAvgLat := round(float64(sumAvgLat) / float64(numData) / math.Pow10(3))
+	outputP50Lat := round(float64(sumP50Lat) / float64(numData) / math.Pow10(3))
+	outputP95Lat := round(float64(sumP95Lat) / float64(numData) / math.Pow10(3))
 	outputP99Lat := round(float64(sumP99Lat) / float64(numData) / math.Pow10(3))
 	//avgMid80RecvTime := round(float64(sumMid80RecvTime) / float64(numData) / math.Pow10(9))
 	outputMax80RecvTime := round(float64(maxMid80RecvTime) / math.Pow10(9))
 	outputSumMid80Requests := sumMid80Requests * (*allData)[0].ClientBatchSize
 	outputMid80Throughput := round(float64(outputSumMid80Requests) / outputMax80RecvTime)
 	output := Output{
+		AvgDur: outputAvgDur,
 		AvgLat: outputAvgLat,
+		P50Lat: outputP50Lat,
+		P95LAT: outputP95Lat,
 		P99Lat: outputP99Lat,
+		MaxDur: maxDur,
 		Mid80Throughput: outputMid80Throughput,
 	}
 	fmt.Printf("%+v\n", output)

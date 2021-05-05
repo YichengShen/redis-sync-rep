@@ -16,7 +16,7 @@ var KeyPoolSize = 1000
 
 var ClientTimeout = 100000 * time.Second
 var NClientRequests = 10000
-var ClientBatchSize = 1
+var ClientBatchSize = 10
 var KeyLen = 8
 var ValLen = 8
 
