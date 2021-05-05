@@ -5,6 +5,7 @@ ReplicaPort: 6379
 
 LogDir: "./logs"
 
+NServers: 2
 NClients: 100
 ClientTimeout: 100000
 NClientRequests: 10000

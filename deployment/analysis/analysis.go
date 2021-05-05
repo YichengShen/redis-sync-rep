@@ -33,6 +33,11 @@ type ClientData struct {
 }
 
 type Output struct {
+	NServers int
+	NClients int
+	NClientRequests int
+	ClientBatchSize int
+	NTotalRequests int
 	AvgDur float64
 	AvgLat float64
 	P50Lat float64
@@ -106,6 +111,11 @@ func RunAnalysis(logDirPath string)  {
 	outputSumMid80Requests := sumMid80Requests * cfg.Conf.ClientBatchSize
 	outputMid80Throughput := round(float64(outputSumMid80Requests) / outputMax80RecvTime)
 	output := Output{
+		NServers: cfg.Conf.NServers,
+		NClients: cfg.Conf.NClients,
+		NClientRequests: cfg.Conf.NClientRequests,
+		ClientBatchSize: cfg.Conf.ClientBatchSize,
+		NTotalRequests: cfg.Conf.NClientRequests * cfg.Conf.ClientBatchSize,
 		AvgDur: outputAvgDur,
 		AvgLat: outputAvgLat,
 		P50Lat: outputP50Lat,

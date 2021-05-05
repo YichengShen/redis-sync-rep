@@ -22,6 +22,7 @@ type Config struct {
 
 	LogDir string `yaml:"LogDir"`
 
+	NServers int `yaml:"NServers"`
 	NClients int `yaml:"NClients"`
 	ClientTimeout int `yaml:"ClientTimeout"`
 	NClientRequests int `yaml:"NClientRequests"`
