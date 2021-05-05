@@ -69,6 +69,32 @@ func (r *RedisClient) Get(key string) (string, error) {
 	}
 }
 
+// Mset calls the redis mset command
+func (r *RedisClient) Mset(keyValues []string, numReplicas int) error {
+	err := r.Client.MSet(r.Context, keyValues).Err()
+	if err != nil {
+		panic(err)
+	}
+
+	// Use redis WAIT command to block until numReplicas replicas got the previous write
+	_, err = r.Client.Do(r.Context, "wait", numReplicas, 0).Result()
+	if err != nil {
+		return err
+	}
+	//fmt.Println("Replicated to", n, "replicas")
+
+	return nil
+}
+
+// Mget calls the redis mget command
+func (r *RedisClient) Mget(keys []string) []interface{} {
+	values, err := r.Client.MGet(r.Context, keys...).Result()
+	if err != nil {
+		panic(err)
+	}
+	return values
+}
+
 func (r *RedisClient) PrintInfo() {
 	fmt.Println(r.Client.Do(r.Context, "info", "replication"))
 }

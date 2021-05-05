@@ -81,7 +81,11 @@ func (c *Client) CloseLoopClient(wg *sync.WaitGroup, keyPool *[]string)  {
 	// TODO: ClientBatchSize not meaningful yet
 	for i := 0; i < NClientRequests/ClientBatchSize; i++ {
 
-		go c.processOneCommand(i, keyPool)
+		if ClientBatchSize > 1 {
+			go c.processBatchCommands(i, keyPool)
+		} else {
+			go c.processOneCommand(i, keyPool)
+		}
 
 		select {
 		case <-c.CommandDone:
@@ -96,7 +100,7 @@ func (c *Client) CloseLoopClient(wg *sync.WaitGroup, keyPool *[]string)  {
 	c.writeToLog()
 }
 
-// processOneCommand randomly runs SET or GET
+// processOneCommand randomly runs SET or GET for one time
 // and keeps track of time
 func (c *Client) processOneCommand(i int, keyPool *[]string)  {
 	// Randomly get a key from keyPool
@@ -126,6 +130,53 @@ func (c *Client) processOneCommand(i int, keyPool *[]string)  {
 
 	// Save time into CommandLog of client
 	c.CommandLog[i] = CommandLog{
+		StartTime: tic,
+		EndTime: toc,
+		Duration: toc.Sub(tic),
+	}
+
+	c.CommandDone <- 1
+	c.SentSoFar += ClientBatchSize
+}
+
+// processBatchCommands runs MGET or MSET
+func (c *Client) processBatchCommands(idx int, keyPool *[]string) {
+	setCmds := make([]string, ClientBatchSize*2) // pending MSET requests
+	getCmds := make([]string, ClientBatchSize)   // pending MGET requests
+	setCount, getCount := 0, 0                   // elements counter
+
+	for i := 0; i < ClientBatchSize; i ++ {
+		// Random 0 or 1
+		command := c.Rand.Intn(2)
+
+		key := (*keyPool)[c.Rand.Intn(KeyPoolSize)]
+
+		if command == 0 {
+			// Append set command
+			value := rstring.RandString(c.Rand, ValLen)
+			setCmds[setCount] = key
+			setCount += 1
+			setCmds[setCount] = value
+			setCount += 1
+		} else {
+			// Append get command
+			getCmds[getCount] = key
+			getCount += 1
+		}
+	}
+
+	// Run MGET and MSET and track time
+	tic := time.Now()
+	if setCount > 1 {
+		c.MasterClient.Mset(setCmds[:setCount], 1)
+	}
+	if getCount > 1 {
+		c.MasterClient.Mget(getCmds[:getCount])
+	}
+	toc := time.Now()
+
+	// Save time into CommandLog of client
+	c.CommandLog[idx] = CommandLog{
 		StartTime: tic,
 		EndTime: toc,
 		Duration: toc.Sub(tic),
