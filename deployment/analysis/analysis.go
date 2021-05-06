@@ -35,16 +35,18 @@ type ClientData struct {
 type Output struct {
 	NServers int
 	NClients int
-	NClientRequests int
+
 	ClientBatchSize int
-	NTotalRequests int
-	AvgDur float64
-	AvgLat float64
+
+	Mid80Throughput float64
 	P50Lat float64
+	AvgLat float64
+	AvgDur float64
 	P95LAT float64
 	P99Lat float64
 	MaxDur float64
-	Mid80Throughput float64
+	NClientRequests int
+	NTotalRequests int
 }
 
 func LoadClientLogs(logDirPath string) *[]ClientData {
@@ -115,7 +117,7 @@ func RunAnalysis(logDirPath string)  {
 		NClients: cfg.Conf.NClients,
 		NClientRequests: cfg.Conf.NClientRequests,
 		ClientBatchSize: cfg.Conf.ClientBatchSize,
-		NTotalRequests: cfg.Conf.NClientRequests * cfg.Conf.ClientBatchSize,
+		NTotalRequests: cfg.Conf.NClientRequests * cfg.Conf.NClients,
 		AvgDur: outputAvgDur,
 		AvgLat: outputAvgLat,
 		P50Lat: outputP50Lat,
@@ -126,6 +128,17 @@ func RunAnalysis(logDirPath string)  {
 	}
 	fmt.Printf("%+v\n", output)
 	fmt.Println(output)
+	fmt.Println(
+		output.Mid80Throughput,
+		output.P50Lat,
+		output.AvgLat,
+		output.AvgDur,
+		output.P95LAT,
+		output.P99Lat,
+		output.MaxDur,
+		output.NClientRequests,
+		output.NTotalRequests,
+	)
 }
 
 func round(input float64) float64 {

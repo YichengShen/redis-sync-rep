@@ -5,13 +5,13 @@ ReplicaPort: 6379
 
 LogDir: "./logs"
 
-NReplicas: 2 # number of replicas used in the Redis WAIT command (at least replicate to NReplicas to proceed)
+NReplicas: 1 # number of replicas used in the Redis WAIT command (at least replicate to NReplicas to proceed)
 
-NServers: 3
-NClients: 100
+NServers: 2
+NClients: 15
 ClientTimeout: 100000
 NClientRequests: 10000
-ClientBatchSize: 10
+ClientBatchSize: 20
 
 KeyLen: 10
 ValLen: 10
