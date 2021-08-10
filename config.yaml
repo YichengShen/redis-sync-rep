@@ -7,11 +7,11 @@ LogDir: "./logs"
 
 NReplicas: 1 # number of replicas used in the Redis WAIT command (at least replicate to NReplicas to proceed)
 
-NServers: 2
-NClients: 15
+NServers: 2 # number of VMs (e.g. in the case of 1 master and 1 replica, NServers = 2)
+NClients: 15 # number of clients (proxy batch)
 ClientTimeout: 100000
 NClientRequests: 10000
-ClientBatchSize: 20
+ClientBatchSize: 20 # batch size for each client
 
 KeyLen: 10
 ValLen: 10
