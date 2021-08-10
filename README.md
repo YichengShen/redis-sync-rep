@@ -1,4 +1,4 @@
-# Redis Testing
+# Redis Synchronous Replication
 
 ## TO RUN
 
@@ -8,8 +8,8 @@
 sudo su && cd ~
 mkdir -p ~/go/src
 cd ~/go/src
-git clone https://github.com/YichengShen/redis-testing.git
-cd redis-testing
+git clone https://github.com/YichengShen/redis-sync-rep.git
+cd redis-sync-rep
 
 ```
 
