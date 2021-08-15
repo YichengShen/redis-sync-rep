@@ -13,18 +13,24 @@
 
 2. On each VM, complete the following steps:
 
-    - Clone the repository
+    - Clone [Rabia](https://github.com/haochenpan/rabia) repository
         ```shell
-        sudo su && cd ~
-        mkdir -p ~/go/src
+        sudo su
+        mkdir -p ~/go/src && cd ~/go/src
+        git clone https://github.com/haochenpan/rabia.git
+        ```
+
+    - Install Rabia and its dependencies (Dependencies of Sync-Rep are included in Rabia's installation script.)
+        ```shell
+        cd ./rabia/deployment
+        . ./install/install.sh
+        ```
+
+    - Clone Sync-Rep repository
+        ```shell
         cd ~/go/src
         git clone https://github.com/YichengShen/redis-sync-rep.git
         cd redis-sync-rep
-        ```
-
-    - Install Redis, Go, and dependancies
-        ```shell
-        . ./deployment/install/install.sh
         ```
 
     - Configure IP of master VM
