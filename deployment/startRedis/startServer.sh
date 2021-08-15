@@ -17,7 +17,7 @@ parse_yaml() {
 }
 
 # Read IP of master from configuration file
-CONFIG_PATH="../../config.yaml"
+CONFIG_PATH="config.yaml"
 eval $(parse_yaml $CONFIG_PATH "cfg_")
  
 arg1=$1
