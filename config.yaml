@@ -1,4 +1,4 @@
-MasterIp: 10.142.0.58
+MasterIp: 10.128.15.204  # IP of your master VM (Make sure you change this before you start server)
 MasterPort: 6379
 ReplicaIp: localhost
 ReplicaPort: 6379
