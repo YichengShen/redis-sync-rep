@@ -1,6 +1,6 @@
 # OS assumption: Ubuntu 16.04
 
-redis_folder=~/go/src/redis-testing           # the path to the folder cloned from Github
+redis_folder=~/go/src/redis-sync-rep          # the path to the folder cloned from Github
 go_tar=go1.15.8.linux-amd64.tar.gz            # the version of Golang to be downloaded in install_go
 
 # Copies the SSH public key to the "authorized_keys" file
