@@ -22,7 +22,7 @@ function install_redis_from_source() {
     rm ${redis_ver}.tar.gz
     cd ${redis_ver}
     make
-    cd ~/go/src/rabia/deployment
+    cd $sync_rep_folder
 }
 
 # Install Redis using apt-get
