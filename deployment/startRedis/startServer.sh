@@ -43,4 +43,5 @@ fi
 
 $REDIS_PATH/src/redis-cli config set protected-mode no
 
-$REDIS_PATH/src/redis-cli -h $cfg_MasterIp ping # Success if you see PONG
+# Success if you see PONG
+$REDIS_PATH/src/redis-cli -h $cfg_MasterIp ping 
