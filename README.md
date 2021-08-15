@@ -1,40 +1,47 @@
-# Redis Synchronous Replication
+# Sync-Rep (Synchronous replication using standalone Redis)
 
-## TO RUN
+## 2 Configurations
+- (i) Sync-Rep (1): two VMs, one as the Redis leader and the other as a follower; and 
+- (ii) Sync-Rep (2): three VMs, one as the Redis leader and the other two as followers.
+- Note: We run clients on follower VMs to force the system to have one RTT so that it’s compatible with SMR-based approach.
+
+## To Run
 
 1. Start VMs
-    - The number of VMs depends on your setup. The minimum is 2 VMs (one being the master and the other being a replica).
+    - Start appropriate number of VMs according to Sync-Rep (1) or (2).
+    - OS Assumption: Ubuntu 16.04
 
 2. On each VM, complete the following steps:
 
     - Clone the repository
-    ```shell
-
-    sudo su && cd ~
-    mkdir -p ~/go/src
-    cd ~/go/src
-    git clone https://github.com/YichengShen/redis-sync-rep.git
-    cd redis-sync-rep
-
-    ```
+        ```shell
+        sudo su && cd ~
+        mkdir -p ~/go/src
+        cd ~/go/src
+        git clone https://github.com/YichengShen/redis-sync-rep.git
+        cd redis-sync-rep
+        ```
 
     - Install Redis, Go, and dependancies
-    ```shell
-    . ./deployment/install/install.sh
-    ```
+        ```shell
+        . ./deployment/install/install.sh
+        ```
 
-    - Start Redis server
-        - configure the current VM as a master
+    - Configure IP of master VM
+        - In `config.yaml`, change 'MasterIp' to the IP of your master VM.
+
+    - Start Redis server: You could configure the current VM either as a master or a replica.
+        - configure as master
             ```shell
             . ./deployment/startRedis/startServer.sh
             ```
-        - configure the current VM as a replica
+        - configure as replica
             ```shell
             . ./deployment/startRedis/startServer.sh replica
             ```
-        Note: For the minimum requirement, you need 2 VMs. You configure one to be the master and the other to be a replica using the commands above.
         
-    - Adjust parameters in `config.yaml`
+    - Adjust parameters related to batching in `config.yaml`
+        - Change ‘NClients’ and ‘ClientBatchSize’.
    
 3. From one of the client VMs, run the main program
     ```shell
